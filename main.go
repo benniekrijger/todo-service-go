@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/gorilla/mux"
-	"gosite/controllers"
-	"gosite/db"
+	"todo-service-go/controllers"
+	"todo-service-go/db"
 	"log"
 	"net/http"
 )

@@ -2,7 +2,7 @@ package db
 
 import (
 	"github.com/gocql/gocql"
-	"gosite/models"
+	"todo-service-go/models"
 	"log"
 )
 

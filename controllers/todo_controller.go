@@ -2,9 +2,9 @@ package controllers
 
 import (
 	"net/http"
-	"gosite/db"
+	"todo-service-go/db"
 	"encoding/json"
-	"gosite/models"
+	"todo-service-go/models"
 	"log"
 )
 
