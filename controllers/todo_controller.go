@@ -2,19 +2,16 @@ package controllers
 
 import (
 	"net/http"
-	"todo-service-go/db"
 	"encoding/json"
 	"todo-service-go/models"
-	"log"
 )
 
 type TodoController struct {
 	CommonController
-	DbSession *db.Cassandra
 }
 
 func (c *TodoController) Index(w http.ResponseWriter, req *http.Request) {
-	todos := c.DbSession.GetTodos()
+	todos := [0]string{}
 
 	c.SendJSON(
 		w,
@@ -34,16 +31,18 @@ func (c *TodoController) AddTodo(w http.ResponseWriter, req *http.Request)  {
 		return
 	}
 
-	id, err := c.DbSession.AddTodo(&todo)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	c.NatsSession.Publish("todos.new", []byte("Hello!"))
 
-	todo.Id = id
-
-	log.Printf("Inserted todo with id: %v", id)
-
+	//id, err := c.DbSession.AddTodo(&todo)
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+	//
+	//todo.Id = id
+	//
+	//log.Printf("Inserted todo with id: %v", id)
+	//
 	c.SendJSON(
 		w,
 		req,

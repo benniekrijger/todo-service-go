@@ -6,17 +6,19 @@ import (
 	"todo-service-go/db"
 	"log"
 	"net/http"
+	"todo-service-go/handlers"
+	"github.com/nats-io/go-nats"
 )
 
 func main() {
-	session := db.Cassandra{}
-	if err := session.Init("todos"); err != nil {
+	dbSession := db.Cassandra{}
+	if err := dbSession.Init("todos"); err != nil {
 		panic(err)
 	}
 
-	defer session.Close()
+	defer dbSession.Close()
 
-	if err := session.CreateTable(`create table if not exists todos (
+	if err := dbSession.CreateTable(`create table if not exists todos (
 		id UUID,
 		title text,
 		completed boolean,
@@ -25,15 +27,23 @@ func main() {
 		panic(err)
 	}
 
-	personController := &controllers.TodoController{
-		DbSession: &session,
+	natsSession, err := nats.Connect(nats.DefaultURL)
+	if err != nil {
+		panic(err)
 	}
 
-	router := mux.NewRouter().StrictSlash(true)
-	subRouter := router.PathPrefix("/api/v1/").Subrouter()
+	defer natsSession.Close()
 
-	subRouter.HandleFunc("/todos", personController.Index).Methods("GET")
-	subRouter.HandleFunc("/todos", personController.AddTodo).Methods("POST")
+	todoHandler := &handlers.TodoHandler{handlers.CommonHandler{&dbSession, natsSession}}
+	todoHandler.Init()
+
+	todoController := &controllers.TodoController{controllers.CommonController{natsSession}}
+
+	router := mux.NewRouter().StrictSlash(true)
+	todoRouter := router.PathPrefix("/api/v1/").Subrouter()
+
+	todoRouter.HandleFunc("/todos", todoController.Index).Methods("GET")
+	todoRouter.HandleFunc("/todos", todoController.AddTodo).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

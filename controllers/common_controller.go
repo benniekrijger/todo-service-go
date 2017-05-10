@@ -6,9 +6,12 @@ import (
 	"log"
 	"fmt"
 	"io"
+	"github.com/nats-io/go-nats"
 )
 
-type CommonController struct {}
+type CommonController struct {
+	NatsSession *nats.Conn
+}
 
 func (c *CommonController) SendJSON(w http.ResponseWriter, r *http.Request, v interface{}, code int) {
 	w.Header().Add("Content-Type", "application/json")

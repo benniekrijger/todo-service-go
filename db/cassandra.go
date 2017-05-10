@@ -31,11 +31,7 @@ func (c *Cassandra) Init(keyspace string) error {
 }
 
 func (c *Cassandra) CreateTable(table string) error {
-	return createTable(c.session, table)
-}
-
-func createTable(session *gocql.Session, table string) error {
-	if err := session.Query(table).RetryPolicy(nil).Exec(); err != nil {
+	if err := c.session.Query(table).RetryPolicy(nil).Exec(); err != nil {
 		log.Printf("error creating table table=%q err=%v\n", table, err)
 		return err
 	}
