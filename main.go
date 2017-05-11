@@ -45,6 +45,7 @@ func main() {
 
 	todoRouter.HandleFunc("/todos", todoController.Index).Methods("GET")
 	todoRouter.HandleFunc("/todos", todoController.AddTodo).Methods("POST")
+	todoRouter.HandleFunc("/todos/{todo_id}", todoController.GetTodo).Methods("GET")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

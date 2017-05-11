@@ -17,7 +17,7 @@ func (h *TodoHandler) Init() error {
 		event := events.TodoAdded{}
 		err := proto.Unmarshal(m.Data, &event)
 		if err != nil {
-			log.Fatal("Unable to unmarshal todo added event", err)
+			log.Println("Unable to unmarshal todo added event", err)
 		}
 
 		todo := models.Todo{
@@ -27,7 +27,7 @@ func (h *TodoHandler) Init() error {
 
 		id, err := h.TodoRepository.AddTodo(&todo)
 		if err != nil {
-			log.Fatal("Unable to add todo", err)
+			log.Println("Unable to add todo", err)
 		}
 
 		log.Printf("Added todo with id: %s", id.String())

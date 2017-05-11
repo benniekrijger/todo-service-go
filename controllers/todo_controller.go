@@ -2,11 +2,13 @@ package controllers
 
 import (
 	"net/http"
-	"encoding/json"
 	"github.com/golang/protobuf/proto"
-	"todo-service-go/models"
 	"todo-service-go/events"
 	"todo-service-go/repositories"
+	"todo-service-go/commands"
+	"log"
+	"github.com/gorilla/mux"
+	"github.com/gocql/gocql"
 )
 
 type TodoController struct {
@@ -25,20 +27,44 @@ func (c *TodoController) Index(w http.ResponseWriter, req *http.Request) {
 	)
 }
 
+func (c *TodoController) GetTodo(w http.ResponseWriter, req *http.Request)  {
+	vars := mux.Vars(req)
+	id := vars["todo_id"]
+
+	uuid, err := gocql.ParseUUID(id)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Invalid body", http.StatusBadRequest)
+		return
+	}
+
+	todo := c.TodoRepository.GetTodo(uuid)
+	if todo != nil {
+		c.SendJSON(
+			w,
+			req,
+			todo,
+			http.StatusOK,
+		)
+	} else {
+		http.Error(w, "Todo not found", http.StatusNotFound)
+	}
+}
+
 func (c *TodoController) AddTodo(w http.ResponseWriter, req *http.Request)  {
 	defer req.Body.Close()
 
-	decoder := json.NewDecoder(req.Body)
-	todo := models.Todo{}
-	err := decoder.Decode(&todo)
+	command := &commands.AddTodo{}
+	err := c.DecodeAndValidate(req, command)
 	if err != nil {
+		log.Println(err)
 		http.Error(w, "Invalid body", http.StatusBadRequest)
 		return
 	}
 
 	event := events.TodoAdded{
-		Title: proto.String(todo.Title),
-		Completed: proto.Bool(todo.Completed),
+		Title: proto.String(command.Title),
+		Completed: proto.Bool(command.Completed),
 	}
 
 	data, err := proto.Marshal(&event)

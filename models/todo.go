@@ -1,6 +1,8 @@
 package models
 
-import "github.com/gocql/gocql"
+import (
+	"github.com/gocql/gocql"
+)
 
 type Todo struct {
 	Id        gocql.UUID	`json:"id"`

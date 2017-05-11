@@ -7,10 +7,22 @@ import (
 	"fmt"
 	"io"
 	"github.com/nats-io/go-nats"
+	"todo-service-go/utils"
 )
 
 type CommonController struct {
 	NatsSession *nats.Conn
+}
+
+func (c *CommonController) DecodeAndValidate(r *http.Request, v utils.InputValidation) error {
+	// json decode the payload - obviously this could be abstracted
+	// to handle many content types
+	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+		return err
+	}
+	defer r.Body.Close()
+	// peform validation on the InputValidation implementation
+	return v.Validate(r)
 }
 
 func (c *CommonController) SendJSON(w http.ResponseWriter, r *http.Request, v interface{}, code int) {

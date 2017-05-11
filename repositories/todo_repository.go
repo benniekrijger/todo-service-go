@@ -19,7 +19,7 @@ func (c *TodoRepository) Init() error {
 	)`);
 }
 
-func (c *TodoRepository) GetTodos() []models.Todo {
+func (c *TodoRepository) GetTodos() *[]models.Todo {
 	var todos []models.Todo
 	m := map[string]interface{}{}
 
@@ -35,7 +35,23 @@ func (c *TodoRepository) GetTodos() []models.Todo {
 		m = map[string]interface{}{}
 	}
 
-	return todos
+	return &todos
+}
+
+func (c *TodoRepository) GetTodo(id gocql.UUID) *models.Todo {
+	m := map[string]interface{}{}
+
+	query := "SELECT id, title, completed FROM todos WHERE id = ? LIMIT 1"
+	iterable := c.Db.Connection.Query(query, id).Iter()
+	for iterable.MapScan(m) {
+		return &models.Todo{
+			Id:		m["id"].(gocql.UUID),
+			Title:	    	m["title"].(string),
+			Completed:  	m["completed"].(bool),
+		}
+	}
+
+	return nil
 }
 
 func (c *TodoRepository) AddTodo(todo *models.Todo) (gocql.UUID, error) {
