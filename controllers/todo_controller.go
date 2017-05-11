@@ -3,15 +3,19 @@ package controllers
 import (
 	"net/http"
 	"encoding/json"
+	"github.com/golang/protobuf/proto"
 	"todo-service-go/models"
+	"todo-service-go/events"
+	"todo-service-go/repositories"
 )
 
 type TodoController struct {
 	CommonController
+	TodoRepository *repositories.TodoRepository
 }
 
 func (c *TodoController) Index(w http.ResponseWriter, req *http.Request) {
-	todos := [0]string{}
+	todos := c.TodoRepository.GetTodos()
 
 	c.SendJSON(
 		w,
@@ -23,6 +27,7 @@ func (c *TodoController) Index(w http.ResponseWriter, req *http.Request) {
 
 func (c *TodoController) AddTodo(w http.ResponseWriter, req *http.Request)  {
 	defer req.Body.Close()
+
 	decoder := json.NewDecoder(req.Body)
 	todo := models.Todo{}
 	err := decoder.Decode(&todo)
@@ -31,22 +36,20 @@ func (c *TodoController) AddTodo(w http.ResponseWriter, req *http.Request)  {
 		return
 	}
 
-	c.NatsSession.Publish("todos.new", []byte("Hello!"))
+	event := events.TodoAdded{
+		Title: proto.String(todo.Title),
+		Completed: proto.Bool(todo.Completed),
+	}
 
-	//id, err := c.DbSession.AddTodo(&todo)
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//
-	//todo.Id = id
-	//
-	//log.Printf("Inserted todo with id: %v", id)
-	//
-	c.SendJSON(
-		w,
-		req,
-		todo,
-		http.StatusOK,
-	)
+	data, err := proto.Marshal(&event)
+	if err != nil {
+		http.Error(w, "Unable to add todo", http.StatusBadRequest)
+		return
+	}
+
+	c.NatsSession.Publish("todos.new", data)
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(`{"ok": true}`))
 }

@@ -3,29 +3,21 @@ package main
 import (
 	"github.com/gorilla/mux"
 	"todo-service-go/controllers"
-	"todo-service-go/db"
+	"todo-service-go/repositories"
+	"todo-service-go/handlers"
 	"log"
 	"net/http"
-	"todo-service-go/handlers"
 	"github.com/nats-io/go-nats"
+	"todo-service-go/cassandra"
 )
 
 func main() {
-	dbSession := db.Cassandra{}
-	if err := dbSession.Init("todos"); err != nil {
+	dbConn, err := cassandra.Connect(cassandra.DefaultURL, "todos")
+	if err != nil {
 		panic(err)
 	}
 
-	defer dbSession.Close()
-
-	if err := dbSession.CreateTable(`create table if not exists todos (
-		id UUID,
-		title text,
-		completed boolean,
-		PRIMARY KEY(id)
-	)`); err != nil {
-		panic(err)
-	}
+	defer dbConn.Close()
 
 	natsSession, err := nats.Connect(nats.DefaultURL)
 	if err != nil {
@@ -34,10 +26,19 @@ func main() {
 
 	defer natsSession.Close()
 
-	todoHandler := &handlers.TodoHandler{handlers.CommonHandler{&dbSession, natsSession}}
+	todoRepository := repositories.TodoRepository{repositories.BaseRepository{dbConn}}
+	err = todoRepository.Init()
+	if err != nil {
+		panic(err)
+	}
+
+	todoHandler := &handlers.TodoHandler{handlers.CommonHandler{&todoRepository, natsSession}}
 	todoHandler.Init()
 
-	todoController := &controllers.TodoController{controllers.CommonController{natsSession}}
+	todoController := &controllers.TodoController{
+		CommonController: controllers.CommonController{natsSession},
+		TodoRepository: &todoRepository,
+	}
 
 	router := mux.NewRouter().StrictSlash(true)
 	todoRouter := router.PathPrefix("/api/v1/").Subrouter()

@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"todo-service-go/db"
 	"github.com/nats-io/go-nats"
+	"todo-service-go/repositories"
 )
 
 type CommonHandler struct {
-	DbSession *db.Cassandra
-	NatsSession *nats.Conn
+	TodoRepository *repositories.TodoRepository
+	NatsSession    *nats.Conn
 }
