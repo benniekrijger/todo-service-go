@@ -43,10 +43,10 @@ func main() {
 	router := mux.NewRouter().StrictSlash(true)
 	todoRouter := router.PathPrefix("/api/v1/").Subrouter()
 
-	todoRouter.HandleFunc("/todos", todoController.Index).Methods("GET")
-	todoRouter.HandleFunc("/todos", todoController.AddTodo).Methods("POST")
-	todoRouter.HandleFunc("/todos/{todo_id}", todoController.GetTodo).Methods("GET")
-	todoRouter.HandleFunc("/todos/{todo_id}", todoController.RemoveTodo).Methods("DELETE")
+	todoRouter.HandleFunc("/todos", todoController.Index).Methods(http.MethodGet)
+	todoRouter.HandleFunc("/todos", todoController.AddTodo).Methods(http.MethodPost)
+	todoRouter.HandleFunc("/todos/{todo_id}", todoController.GetTodo).Methods(http.MethodGet)
+	todoRouter.HandleFunc("/todos/{todo_id}", todoController.RemoveTodo).Methods(http.MethodDelete)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
