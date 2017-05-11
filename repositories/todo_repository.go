@@ -69,3 +69,14 @@ func (c *TodoRepository) AddTodo(todo *models.Todo) (gocql.UUID, error) {
 	return newId, nil
 }
 
+func (c *TodoRepository) RemoveTodo(id gocql.UUID) error {
+	log.Printf("Removing todo with id: %s", id.String())
+
+	err := c.Db.Connection.Query("DELETE FROM todos WHERE id = ?", id).Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+

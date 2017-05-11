@@ -27,6 +27,34 @@ func (c *TodoController) Index(w http.ResponseWriter, req *http.Request) {
 	)
 }
 
+func (c *TodoController) RemoveTodo(w http.ResponseWriter, req *http.Request)  {
+	vars := mux.Vars(req)
+	id := vars["todo_id"]
+
+	uuid, err := gocql.ParseUUID(id)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Invalid body", http.StatusBadRequest)
+		return
+	}
+
+	event := events.TodoRemoved{
+		Id: proto.String(uuid.String()),
+	}
+
+	data, err := proto.Marshal(&event)
+	if err != nil {
+		http.Error(w, "Unable to add todo", http.StatusBadRequest)
+		return
+	}
+
+	c.NatsSession.Publish("todos.remove", data)
+
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(`{"ok": true}`))
+}
+
 func (c *TodoController) GetTodo(w http.ResponseWriter, req *http.Request)  {
 	vars := mux.Vars(req)
 	id := vars["todo_id"]
