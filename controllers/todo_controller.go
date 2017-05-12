@@ -17,7 +17,7 @@ type TodoController struct {
 	todoRepository *repositories.TodoRepository
 }
 
-func NewTodoController(natsSession *nats.Conn, todoRepository *repositories.TodoRepository) *TodoController {
+func NewTodoController(todoRepository *repositories.TodoRepository, natsSession *nats.Conn) *TodoController {
 	return &TodoController{
 		CommonController{natsSession},
 		todoRepository,

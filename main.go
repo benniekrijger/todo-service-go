@@ -9,24 +9,31 @@ import (
 	"net/http"
 	"github.com/nats-io/go-nats"
 	"todo-service-go/cassandra"
+	"os"
 )
 
 func main() {
-	dbConn, err := cassandra.Connect(cassandra.DefaultURL, "todos")
+	cassandraHost := os.Getenv("CASSANDRA_URL")
+	if cassandraHost == "" {
+		cassandraHost = cassandra.DefaultURL
+	}
+	dbSession, err := cassandra.Connect(cassandraHost, "todos")
 	if err != nil {
 		panic(err)
 	}
+	defer dbSession.Close()
 
-	defer dbConn.Close()
-
-	natsSession, err := nats.Connect(nats.DefaultURL)
+	natsHost := os.Getenv("NATS_URL")
+	if natsHost == "" {
+		natsHost = nats.DefaultURL
+	}
+	natsSession, err := nats.Connect(natsHost)
 	if err != nil {
 		panic(err)
 	}
-
 	defer natsSession.Close()
 
-	todoRepository, err := repositories.NewTodoRepository(dbConn)
+	todoRepository, err := repositories.NewTodoRepository(dbSession)
 	if err != nil {
 		panic(err)
 	}
@@ -36,7 +43,7 @@ func main() {
 		panic(err)
 	}
 
-	todoController := controllers.NewTodoController(natsSession, todoRepository)
+	todoController := controllers.NewTodoController(todoRepository, natsSession)
 
 	router := mux.NewRouter().StrictSlash(true)
 	todoRouter := router.PathPrefix("/api/v1/").Subrouter()
