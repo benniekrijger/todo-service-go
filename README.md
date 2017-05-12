@@ -11,13 +11,24 @@ To build the docker image of the service, run the following command:
 
 ## Start the service
 
-Start the scylla database:  
-`bash bin/run-scylla.sh`
+### Start Dependencies
 
 Start NATS:      
 `bash bin/run-nats.sh`
 
-Start the service:  
+Start the scylla database:  
+`bash bin/run-scylla.sh`
+
+#### Prepare the database (create keyspace)
+
+```bash  
+docker exec -it scylla sh;
+cqlsh;
+CREATE KEYSPACE todos WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 1};
+```
+
+### Start the service
+
 `bash bin/run-todo-service.sh`
 
 The API should then be available at:  
