@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	// Start Cassandra/Scylla client
 	cassandraHost := os.Getenv("CASSANDRA_URL")
 	if cassandraHost == "" {
 		cassandraHost = cassandra.DefaultURL
@@ -23,6 +24,7 @@ func main() {
 	}
 	defer dbSession.Close()
 
+	// Start NATS client
 	natsHost := os.Getenv("NATS_URL")
 	if natsHost == "" {
 		natsHost = nats.DefaultURL
@@ -33,21 +35,26 @@ func main() {
 	}
 	defer natsSession.Close()
 
+	// Start repository
 	todoRepository, err := repositories.NewTodoRepository(dbSession)
 	if err != nil {
 		panic(err)
 	}
 
+	// Start event handler
 	_, err = handlers.NewTodoHandler(todoRepository, natsSession)
 	if err != nil {
 		panic(err)
 	}
 
+	// Start controller
 	todoController := controllers.NewTodoController(todoRepository, natsSession)
 
+	// Start router
 	router := mux.NewRouter().StrictSlash(true)
 	todoRouter := router.PathPrefix("/api/v1/").Subrouter()
 
+	// Setup routing
 	todoRouter.HandleFunc("/todos", todoController.Index).Methods(http.MethodGet)
 	todoRouter.HandleFunc("/todos", todoController.AddTodo).Methods(http.MethodPost)
 	todoRouter.HandleFunc("/todos/{todo_id}", todoController.GetTodo).Methods(http.MethodGet)

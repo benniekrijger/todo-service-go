@@ -26,7 +26,7 @@ func Connect(url string, keyspace string) (*Cassandra, error) {
 		return nil, err
 	}
 
-	log.Println("cassandra init done")
+	log.Println("db initialized")
 
 	return con, nil
 }
@@ -41,6 +41,6 @@ func (c *Cassandra) CreateTable(table string) error {
 }
 
 func (c *Cassandra) Close() {
-	log.Println("cassandra connection closed")
+	log.Println("db connection closed")
 	c.Connection.Close()
 }
