@@ -14,10 +14,10 @@ To build the docker image of the service, run the following command:
 ### Start Dependencies
 
 Start NATS:      
-`bash bin/run-nats.sh`
+`bin/run-nats.sh`
 
 Start the scylla database:  
-`bash bin/run-scylla.sh`
+`bin/run-scylla.sh`
 
 #### Prepare the database (create keyspace)
 
@@ -29,7 +29,7 @@ CREATE KEYSPACE todos WITH replication = {'class': 'SimpleStrategy', 'replicatio
 
 ### Start the service
 
-`bash bin/run-todo-service.sh`
+`bin/run-todo-service.sh`
 
 The API should then be available at:  
 `127.0.0.1:8011/api/v1/todos`
