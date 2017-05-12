@@ -4,19 +4,26 @@ import (
 	"todo-service-go/models"
 	"github.com/gocql/gocql"
 	"log"
+	"todo-service-go/cassandra"
 )
 
 type TodoRepository struct {
 	BaseRepository
 }
 
-func (c *TodoRepository) Init() error {
-	return c.Db.CreateTable(`create table if not exists todos (
+func NewTodoRepository(db *cassandra.Cassandra) (*TodoRepository, error) {
+	err := db.CreateTable(`create table if not exists todos (
 		id UUID,
 		title text,
 		completed boolean,
 		PRIMARY KEY(id)
-	)`);
+	)`)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &TodoRepository{BaseRepository{db}}, nil
 }
 
 func (c *TodoRepository) GetTodos() *[]models.Todo {
@@ -24,7 +31,7 @@ func (c *TodoRepository) GetTodos() *[]models.Todo {
 	m := map[string]interface{}{}
 
 	query := "SELECT id, title, completed FROM todos"
-	iterable := c.Db.Connection.Query(query).Iter()
+	iterable := c.db.Connection.Query(query).Iter()
 	for iterable.MapScan(m) {
 		todos = append(todos, models.Todo{
 			Id:		m["id"].(gocql.UUID),
@@ -42,7 +49,7 @@ func (c *TodoRepository) GetTodo(id gocql.UUID) *models.Todo {
 	m := map[string]interface{}{}
 
 	query := "SELECT id, title, completed FROM todos WHERE id = ? LIMIT 1"
-	iterable := c.Db.Connection.Query(query, id).Iter()
+	iterable := c.db.Connection.Query(query, id).Iter()
 	for iterable.MapScan(m) {
 		return &models.Todo{
 			Id:		m["id"].(gocql.UUID),
@@ -61,7 +68,7 @@ func (c *TodoRepository) AddTodo(todo *models.Todo) (gocql.UUID, error) {
 	newId := gocql.TimeUUID()
 
 	// write data to Cassandra
-	err := c.Db.Connection.Query("INSERT INTO todos (id, title, completed) VALUES (?, ?, ?)", newId, todo.Title, todo.Completed).Exec()
+	err := c.db.Connection.Query("INSERT INTO todos (id, title, completed) VALUES (?, ?, ?)", newId, todo.Title, todo.Completed).Exec()
 	if err != nil {
 		return newId, err
 	}
@@ -72,7 +79,7 @@ func (c *TodoRepository) AddTodo(todo *models.Todo) (gocql.UUID, error) {
 func (c *TodoRepository) RemoveTodo(id gocql.UUID) error {
 	log.Printf("Removing todo with id: %s", id.String())
 
-	err := c.Db.Connection.Query("DELETE FROM todos WHERE id = ?", id).Exec()
+	err := c.db.Connection.Query("DELETE FROM todos WHERE id = ?", id).Exec()
 	if err != nil {
 		return err
 	}

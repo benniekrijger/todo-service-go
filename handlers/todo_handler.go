@@ -7,28 +7,31 @@ import (
 	"todo-service-go/models"
 	"log"
 	"github.com/gocql/gocql"
+	"todo-service-go/repositories"
 )
 
 type TodoHandler struct {
 	CommonHandler
 }
 
-func (h *TodoHandler) Init() error {
-	_, err := h.NatsSession.Subscribe("todos.new", func(msg *nats.Msg) {
-		h.addTodo(msg)
+func NewTodoHandler(todoRepository *repositories.TodoRepository, natsSession *nats.Conn) (*TodoHandler, error) {
+	handler := TodoHandler{CommonHandler{todoRepository, natsSession}}
+
+	_, err := natsSession.Subscribe("todos.new", func(msg *nats.Msg) {
+		handler.addTodo(msg)
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = h.NatsSession.Subscribe("todos.remove", func(msg *nats.Msg) {
-		h.removeTodo(msg)
+	_, err = natsSession.Subscribe("todos.remove", func(msg *nats.Msg) {
+		handler.removeTodo(msg)
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &handler, nil
 }
 
 func (h *TodoHandler) addTodo(m *nats.Msg) error {
@@ -44,7 +47,7 @@ func (h *TodoHandler) addTodo(m *nats.Msg) error {
 		Completed: event.GetCompleted(),
 	}
 
-	id, err := h.TodoRepository.AddTodo(&todo)
+	id, err := h.todoRepository.AddTodo(&todo)
 	if err != nil {
 		log.Println("Unable to add todo", err)
 		return err
@@ -69,7 +72,7 @@ func (h *TodoHandler) removeTodo(m *nats.Msg) error {
 		return err
 	}
 
-	err = h.TodoRepository.RemoveTodo(id)
+	err = h.todoRepository.RemoveTodo(id)
 	if err != nil {
 		log.Println("Unable to remove todo", err)
 		return err

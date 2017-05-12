@@ -1,12 +1,11 @@
+syntax = "proto3";
 package events;
 
-option optimize_for = SPEED;
-
 message TodoAdded {
-    optional string title = 1;
-    optional bool completed = 2;
+    string title = 1;
+    bool completed = 2;
 }
 
 message TodoRemoved {
-    optional string id = 1;
+    string id = 1;
 }

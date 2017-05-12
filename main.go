@@ -26,19 +26,17 @@ func main() {
 
 	defer natsSession.Close()
 
-	todoRepository := repositories.TodoRepository{repositories.BaseRepository{dbConn}}
-	err = todoRepository.Init()
+	todoRepository, err := repositories.NewTodoRepository(dbConn)
 	if err != nil {
 		panic(err)
 	}
 
-	todoHandler := &handlers.TodoHandler{handlers.CommonHandler{&todoRepository, natsSession}}
-	todoHandler.Init()
-
-	todoController := &controllers.TodoController{
-		CommonController: controllers.CommonController{natsSession},
-		TodoRepository: &todoRepository,
+	_, err = handlers.NewTodoHandler(todoRepository, natsSession)
+	if err != nil {
+		panic(err)
 	}
+
+	todoController := controllers.NewTodoController(natsSession, todoRepository)
 
 	router := mux.NewRouter().StrictSlash(true)
 	todoRouter := router.PathPrefix("/api/v1/").Subrouter()

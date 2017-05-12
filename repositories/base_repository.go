@@ -5,5 +5,5 @@ import (
 )
 
 type BaseRepository struct {
-	Db *cassandra.Cassandra
+	db *cassandra.Cassandra
 }

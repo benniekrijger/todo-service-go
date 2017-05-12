@@ -6,6 +6,6 @@ import (
 )
 
 type CommonHandler struct {
-	TodoRepository *repositories.TodoRepository
-	NatsSession    *nats.Conn
+	todoRepository *repositories.TodoRepository
+	natsSession    *nats.Conn
 }

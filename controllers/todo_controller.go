@@ -9,15 +9,23 @@ import (
 	"log"
 	"github.com/gorilla/mux"
 	"github.com/gocql/gocql"
+	"github.com/nats-io/go-nats"
 )
 
 type TodoController struct {
 	CommonController
-	TodoRepository *repositories.TodoRepository
+	todoRepository *repositories.TodoRepository
+}
+
+func NewTodoController(natsSession *nats.Conn, todoRepository *repositories.TodoRepository) *TodoController {
+	return &TodoController{
+		CommonController{natsSession},
+		todoRepository,
+	}
 }
 
 func (c *TodoController) Index(w http.ResponseWriter, req *http.Request) {
-	todos := c.TodoRepository.GetTodos()
+	todos := c.todoRepository.GetTodos()
 
 	c.SendJSON(
 		w,
@@ -39,7 +47,7 @@ func (c *TodoController) RemoveTodo(w http.ResponseWriter, req *http.Request)  {
 	}
 
 	event := events.TodoRemoved{
-		Id: proto.String(uuid.String()),
+		Id: uuid.String(),
 	}
 
 	data, err := proto.Marshal(&event)
@@ -48,7 +56,7 @@ func (c *TodoController) RemoveTodo(w http.ResponseWriter, req *http.Request)  {
 		return
 	}
 
-	c.NatsSession.Publish("todos.remove", data)
+	c.natsSession.Publish("todos.remove", data)
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -66,7 +74,7 @@ func (c *TodoController) GetTodo(w http.ResponseWriter, req *http.Request)  {
 		return
 	}
 
-	todo := c.TodoRepository.GetTodo(uuid)
+	todo := c.todoRepository.GetTodo(uuid)
 	if todo != nil {
 		c.SendJSON(
 			w,
@@ -91,8 +99,8 @@ func (c *TodoController) AddTodo(w http.ResponseWriter, req *http.Request)  {
 	}
 
 	event := events.TodoAdded{
-		Title: proto.String(command.Title),
-		Completed: proto.Bool(command.Completed),
+		Title: command.Title,
+		Completed: command.Completed,
 	}
 
 	data, err := proto.Marshal(&event)
@@ -101,7 +109,7 @@ func (c *TodoController) AddTodo(w http.ResponseWriter, req *http.Request)  {
 		return
 	}
 
-	c.NatsSession.Publish("todos.new", data)
+	c.natsSession.Publish("todos.new", data)
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

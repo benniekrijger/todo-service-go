@@ -11,7 +11,7 @@ import (
 )
 
 type CommonController struct {
-	NatsSession *nats.Conn
+	natsSession *nats.Conn
 }
 
 func (c *CommonController) DecodeAndValidate(r *http.Request, v utils.InputValidation) error {
