@@ -14,7 +14,7 @@ type CommonController struct {
 	natsSession *nats.Conn
 }
 
-func (c *CommonController) DecodeAndValidate(r *http.Request, v utils.InputValidation) error {
+func (c *CommonController) decodeAndValidate(r *http.Request, v utils.InputValidation) error {
 	// json decode the payload - obviously this could be abstracted
 	// to handle many content types
 	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
@@ -25,7 +25,7 @@ func (c *CommonController) DecodeAndValidate(r *http.Request, v utils.InputValid
 	return v.Validate(r)
 }
 
-func (c *CommonController) SendJSON(w http.ResponseWriter, r *http.Request, v interface{}, code int) {
+func (c *CommonController) sendJSON(w http.ResponseWriter, r *http.Request, v interface{}, code int) {
 	w.Header().Add("Content-Type", "application/json")
 	b, err := json.Marshal(v)
 	if err != nil {

@@ -27,7 +27,7 @@ func NewTodoController(todoRepository *repositories.TodoRepository, natsSession 
 func (c *TodoController) Index(w http.ResponseWriter, req *http.Request) {
 	todos := c.todoRepository.GetTodos()
 
-	c.SendJSON(
+	c.sendJSON(
 		w,
 		req,
 		todos,
@@ -76,7 +76,7 @@ func (c *TodoController) GetTodo(w http.ResponseWriter, req *http.Request)  {
 
 	todo := c.todoRepository.GetTodo(uuid)
 	if todo != nil {
-		c.SendJSON(
+		c.sendJSON(
 			w,
 			req,
 			todo,
@@ -91,7 +91,7 @@ func (c *TodoController) AddTodo(w http.ResponseWriter, req *http.Request)  {
 	defer req.Body.Close()
 
 	command := &commands.AddTodo{}
-	err := c.DecodeAndValidate(req, command)
+	err := c.decodeAndValidate(req, command)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Invalid body", http.StatusBadRequest)
