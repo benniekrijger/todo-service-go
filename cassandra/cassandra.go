@@ -26,8 +26,6 @@ func Connect(url string, keyspace string) (*Cassandra, error) {
 		return nil, err
 	}
 
-	log.Println("db initialized")
-
 	return con, nil
 }
 

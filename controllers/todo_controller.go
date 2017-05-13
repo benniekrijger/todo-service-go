@@ -98,7 +98,15 @@ func (c *TodoController) AddTodo(w http.ResponseWriter, req *http.Request)  {
 		return
 	}
 
+	newId, err := gocql.RandomUUID()
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Unknown error", http.StatusInternalServerError)
+		return
+	}
+
 	event := events.TodoAdded{
+		Id: newId.String(),
 		Title: command.Title,
 		Completed: command.Completed,
 	}

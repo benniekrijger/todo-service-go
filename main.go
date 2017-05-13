@@ -14,25 +14,27 @@ import (
 
 func main() {
 	// Start Cassandra/Scylla client
-	cassandraHost := os.Getenv("CASSANDRA_URL")
-	if cassandraHost == "" {
-		cassandraHost = cassandra.DefaultURL
+	cassandraUrl := os.Getenv("CASSANDRA_URL")
+	if cassandraUrl == "" {
+		cassandraUrl = cassandra.DefaultURL
 	}
-	dbSession, err := cassandra.Connect(cassandraHost, "todos")
+	dbSession, err := cassandra.Connect(cassandraUrl, "todos")
 	if err != nil {
 		panic(err)
 	}
+	log.Println("Initialized DB")
 	defer dbSession.Close()
 
 	// Start NATS client
-	natsHost := os.Getenv("NATS_URL")
-	if natsHost == "" {
-		natsHost = nats.DefaultURL
+	natsUrl := os.Getenv("NATS_URL")
+	if natsUrl == "" {
+		natsUrl = nats.DefaultURL
 	}
-	natsSession, err := nats.Connect(natsHost)
+	natsSession, err := nats.Connect(natsUrl)
 	if err != nil {
 		panic(err)
 	}
+	log.Println("Initialized NATS")
 	defer natsSession.Close()
 
 	// Start repository
@@ -40,25 +42,34 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	log.Println("Initialized Repositories")
 
 	// Start event handler
 	_, err = handlers.NewTodoHandler(todoRepository, natsSession)
 	if err != nil {
 		panic(err)
 	}
+	log.Println("Initialized Handlers")
 
 	// Start controller
 	todoController := controllers.NewTodoController(todoRepository, natsSession)
+	log.Println("Initialized Controllers")
 
-	// Start router
-	router := mux.NewRouter().StrictSlash(true)
-	todoRouter := router.PathPrefix("/api/v1/").Subrouter()
-
-	// Setup routing
-	todoRouter.HandleFunc("/todos", todoController.Index).Methods(http.MethodGet)
-	todoRouter.HandleFunc("/todos", todoController.AddTodo).Methods(http.MethodPost)
-	todoRouter.HandleFunc("/todos/{todo_id}", todoController.GetTodo).Methods(http.MethodGet)
-	todoRouter.HandleFunc("/todos/{todo_id}", todoController.RemoveTodo).Methods(http.MethodDelete)
+	// Start routers
+	router := mux.NewRouter()
+	apiRouter:= router.PathPrefix("/api/v1").Subrouter().StrictSlash(true)
+	apiRouter.HandleFunc("/", healthCheck)
+	apiRouter.HandleFunc("/todos", todoController.Index).Methods(http.MethodGet)
+	apiRouter.HandleFunc("/todos", todoController.AddTodo).Methods(http.MethodPost)
+	apiRouter.HandleFunc("/todos/{todo_id}", todoController.GetTodo).Methods(http.MethodGet)
+	apiRouter.HandleFunc("/todos/{todo_id}", todoController.RemoveTodo).Methods(http.MethodDelete)
+	log.Println("Initialized API")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
+}
+
+func healthCheck(w http.ResponseWriter, req *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"ok": true}`))
 }

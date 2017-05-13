@@ -64,16 +64,13 @@ func (c *TodoRepository) GetTodo(id gocql.UUID) *models.Todo {
 func (c *TodoRepository) AddTodo(todo *models.Todo) (gocql.UUID, error) {
 	log.Println("Creating a new todo")
 
-	// generate a unique UUID for this model
-	newId := gocql.TimeUUID()
-
 	// write data to Cassandra
-	err := c.db.Connection.Query("INSERT INTO todos (id, title, completed) VALUES (?, ?, ?)", newId, todo.Title, todo.Completed).Exec()
+	err := c.db.Connection.Query("INSERT INTO todos (id, title, completed) VALUES (?, ?, ?)", todo.Id, todo.Title, todo.Completed).Exec()
 	if err != nil {
-		return newId, err
+		return todo.Id, err
 	}
 
-	return newId, nil
+	return todo.Id, nil
 }
 
 func (c *TodoRepository) RemoveTodo(id gocql.UUID) error {

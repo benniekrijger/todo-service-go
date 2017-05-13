@@ -42,12 +42,19 @@ func (h *TodoHandler) addTodo(m *nats.Msg) error {
 		return err
 	}
 
+	id, err := gocql.ParseUUID(event.Id)
+	if err != nil {
+		log.Println("Unable to parse todo id", err)
+		return err
+	}
+
 	todo := models.Todo{
+		Id: id,
 		Title: event.GetTitle(),
 		Completed: event.GetCompleted(),
 	}
 
-	id, err := h.todoRepository.AddTodo(&todo)
+	_, err = h.todoRepository.AddTodo(&todo)
 	if err != nil {
 		log.Println("Unable to add todo", err)
 		return err
