@@ -10,3 +10,8 @@ message TodoAdded {
 message TodoRemoved {
     string id = 1;
 }
+
+message TodoPublishTriggered {
+    string offsetId = 1;
+    string limit = 2;
+}

@@ -2,7 +2,7 @@ package cassandra
 
 import (
 	"github.com/gocql/gocql"
-	"log"
+	"github.com/Sirupsen/logrus"
 )
 
 const DefaultURL = "127.0.0.1"
@@ -31,7 +31,7 @@ func Connect(url string, keyspace string) (*Cassandra, error) {
 
 func (c *Cassandra) CreateTable(table string) error {
 	if err := c.Connection.Query(table).RetryPolicy(nil).Exec(); err != nil {
-		log.Printf("error creating table table=%q err=%v\n", table, err)
+		logrus.Errorf("error creating table table=%q err=%v\n", table, err)
 		return err
 	}
 
@@ -39,6 +39,6 @@ func (c *Cassandra) CreateTable(table string) error {
 }
 
 func (c *Cassandra) Close() {
-	log.Println("db connection closed")
+	logrus.Info("db connection closed")
 	c.Connection.Close()
 }

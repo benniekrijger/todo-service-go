@@ -6,10 +6,10 @@ import (
 	"todo-service-go/events"
 	"todo-service-go/repositories"
 	"todo-service-go/commands"
-	"log"
 	"github.com/gorilla/mux"
 	"github.com/gocql/gocql"
 	"github.com/nats-io/go-nats"
+	"github.com/Sirupsen/logrus"
 )
 
 type TodoController struct {
@@ -41,7 +41,7 @@ func (c *TodoController) RemoveTodo(w http.ResponseWriter, req *http.Request)  {
 
 	uuid, err := gocql.ParseUUID(id)
 	if err != nil {
-		log.Println(err)
+		logrus.Info(err)
 		http.Error(w, "Invalid body", http.StatusBadRequest)
 		return
 	}
@@ -52,7 +52,7 @@ func (c *TodoController) RemoveTodo(w http.ResponseWriter, req *http.Request)  {
 
 	data, err := proto.Marshal(&event)
 	if err != nil {
-		http.Error(w, "Unable to add todo", http.StatusBadRequest)
+		http.Error(w, "Unable to add todo", http.StatusInternalServerError)
 		return
 	}
 
@@ -69,7 +69,7 @@ func (c *TodoController) GetTodo(w http.ResponseWriter, req *http.Request)  {
 
 	uuid, err := gocql.ParseUUID(id)
 	if err != nil {
-		log.Println(err)
+		logrus.Info(err)
 		http.Error(w, "Invalid body", http.StatusBadRequest)
 		return
 	}
@@ -93,14 +93,14 @@ func (c *TodoController) AddTodo(w http.ResponseWriter, req *http.Request)  {
 	command := &commands.AddTodo{}
 	err := c.decodeAndValidate(req, command)
 	if err != nil {
-		log.Println(err)
+		logrus.Info(err)
 		http.Error(w, "Invalid body", http.StatusBadRequest)
 		return
 	}
 
 	newId, err := gocql.RandomUUID()
 	if err != nil {
-		log.Println(err)
+		logrus.Info(err)
 		http.Error(w, "Unknown error", http.StatusInternalServerError)
 		return
 	}

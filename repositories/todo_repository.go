@@ -3,8 +3,8 @@ package repositories
 import (
 	"todo-service-go/models"
 	"github.com/gocql/gocql"
-	"log"
 	"todo-service-go/cassandra"
+	"github.com/Sirupsen/logrus"
 )
 
 type TodoRepository struct {
@@ -27,11 +27,16 @@ func NewTodoRepository(db *cassandra.Cassandra) (*TodoRepository, error) {
 }
 
 func (c *TodoRepository) GetTodos() *[]models.Todo {
+	query := "SELECT id, title, completed FROM todos"
+
+	iterable := c.db.Connection.Query(query).Iter()
+
+	return c.parseResults(iterable)
+}
+
+func (c *TodoRepository) parseResults(iterable *gocql.Iter) *[]models.Todo {
 	var todos []models.Todo
 	m := map[string]interface{}{}
-
-	query := "SELECT id, title, completed FROM todos"
-	iterable := c.db.Connection.Query(query).Iter()
 	for iterable.MapScan(m) {
 		todos = append(todos, models.Todo{
 			Id:		m["id"].(gocql.UUID),
@@ -62,7 +67,7 @@ func (c *TodoRepository) GetTodo(id gocql.UUID) *models.Todo {
 }
 
 func (c *TodoRepository) AddTodo(todo *models.Todo) (gocql.UUID, error) {
-	log.Println("Creating a new todo")
+	logrus.Info("Creating a new todo")
 
 	// write data to Cassandra
 	err := c.db.Connection.Query("INSERT INTO todos (id, title, completed) VALUES (?, ?, ?)", todo.Id, todo.Title, todo.Completed).Exec()
@@ -74,7 +79,7 @@ func (c *TodoRepository) AddTodo(todo *models.Todo) (gocql.UUID, error) {
 }
 
 func (c *TodoRepository) RemoveTodo(id gocql.UUID) error {
-	log.Printf("Removing todo with id: %s", id.String())
+	logrus.Printf("Removing todo with id: %s", id.String())
 
 	err := c.db.Connection.Query("DELETE FROM todos WHERE id = ?", id).Exec()
 	if err != nil {

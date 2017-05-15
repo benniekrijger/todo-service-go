@@ -3,11 +3,11 @@ package controllers
 import (
 	"net/http"
 	"encoding/json"
-	"log"
 	"fmt"
 	"io"
 	"github.com/nats-io/go-nats"
 	"todo-service-go/utils"
+	"github.com/Sirupsen/logrus"
 )
 
 type CommonController struct {
@@ -29,7 +29,7 @@ func (c *CommonController) sendJSON(w http.ResponseWriter, r *http.Request, v in
 	w.Header().Add("Content-Type", "application/json")
 	b, err := json.Marshal(v)
 	if err != nil {
-		log.Print(fmt.Sprintf("Error while encoding JSON: %v", err))
+		logrus.Print(fmt.Sprintf("Error while encoding JSON: %v", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		io.WriteString(w, `{"error": "Internal server error"}`)
 	} else {

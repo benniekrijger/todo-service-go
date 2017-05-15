@@ -5,12 +5,18 @@ import (
 	"todo-service-go/controllers"
 	"todo-service-go/repositories"
 	"todo-service-go/handlers"
-	"log"
 	"net/http"
 	"github.com/nats-io/go-nats"
 	"todo-service-go/cassandra"
 	"os"
+	"github.com/Sirupsen/logrus"
 )
+
+func init() {
+	logrus.SetOutput(os.Stdout)
+	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
+}
 
 func main() {
 	// Start Cassandra/Scylla client
@@ -22,7 +28,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	log.Println("Initialized DB")
+	logrus.Info("Initialized DB")
 	defer dbSession.Close()
 
 	// Start NATS client
@@ -34,7 +40,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	log.Println("Initialized NATS")
+	logrus.Info("Initialized NATS")
 	defer natsSession.Close()
 
 	// Start repository
@@ -42,18 +48,18 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	log.Println("Initialized Repositories")
+	logrus.Info("Initialized Repositories")
 
 	// Start event handler
 	_, err = handlers.NewTodoHandler(todoRepository, natsSession)
 	if err != nil {
 		panic(err)
 	}
-	log.Println("Initialized Handlers")
+	logrus.Info("Initialized Handlers")
 
 	// Start controller
 	todoController := controllers.NewTodoController(todoRepository, natsSession)
-	log.Println("Initialized Controllers")
+	logrus.Info("Initialized Controllers")
 
 	// Start routers
 	router := mux.NewRouter()
@@ -63,9 +69,9 @@ func main() {
 	apiRouter.HandleFunc("/todos", todoController.AddTodo).Methods(http.MethodPost)
 	apiRouter.HandleFunc("/todos/{todo_id}", todoController.GetTodo).Methods(http.MethodGet)
 	apiRouter.HandleFunc("/todos/{todo_id}", todoController.RemoveTodo).Methods(http.MethodDelete)
-	log.Println("Initialized API")
+	logrus.Info("Initialized API")
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	logrus.Fatal(http.ListenAndServe(":8080", router))
 }
 
 func healthCheck(w http.ResponseWriter, req *http.Request) {
