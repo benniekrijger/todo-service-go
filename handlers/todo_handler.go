@@ -1,30 +1,34 @@
 package handlers
 
 import (
-	"github.com/nats-io/go-nats"
 	"todo-service-go/events"
 	"github.com/golang/protobuf/proto"
 	"todo-service-go/models"
 	"github.com/gocql/gocql"
 	"todo-service-go/repositories"
 	"github.com/Sirupsen/logrus"
+	"github.com/nats-io/go-nats-streaming"
+)
+
+var (
+	subscribeGroupName = "handler.todo"
 )
 
 type TodoHandler struct {
 	CommonHandler
 }
 
-func NewTodoHandler(todoRepository *repositories.TodoRepository, natsSession *nats.Conn) (*TodoHandler, error) {
+func NewTodoHandler(todoRepository *repositories.TodoRepository, natsSession stan.Conn) (*TodoHandler, error) {
 	handler := TodoHandler{CommonHandler{todoRepository, natsSession}}
 
-	_, err := natsSession.Subscribe("todos.new", func(msg *nats.Msg) {
+	_, err := natsSession.QueueSubscribe("todos.new", subscribeGroupName, func(msg *stan.Msg) {
 		handler.addTodo(msg)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = natsSession.Subscribe("todos.remove", func(msg *nats.Msg) {
+	_, err = natsSession.QueueSubscribe("todos.remove", subscribeGroupName, func(msg *stan.Msg) {
 		handler.removeTodo(msg)
 	})
 	if err != nil {
@@ -34,7 +38,7 @@ func NewTodoHandler(todoRepository *repositories.TodoRepository, natsSession *na
 	return &handler, nil
 }
 
-func (h *TodoHandler) addTodo(m *nats.Msg) error {
+func (h *TodoHandler) addTodo(m *stan.Msg) error {
 	event := events.TodoAdded{}
 	err := proto.Unmarshal(m.Data, &event)
 	if err != nil {
@@ -65,7 +69,7 @@ func (h *TodoHandler) addTodo(m *nats.Msg) error {
 	return nil
 }
 
-func (h *TodoHandler) removeTodo(m *nats.Msg) error {
+func (h *TodoHandler) removeTodo(m *stan.Msg) error {
 	event := events.TodoRemoved{}
 	err := proto.Unmarshal(m.Data, &event)
 	if err != nil {

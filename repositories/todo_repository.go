@@ -37,6 +37,7 @@ func (c *TodoRepository) GetTodos() *[]models.Todo {
 func (c *TodoRepository) parseResults(iterable *gocql.Iter) *[]models.Todo {
 	var todos []models.Todo
 	m := map[string]interface{}{}
+
 	for iterable.MapScan(m) {
 		todos = append(todos, models.Todo{
 			Id:		m["id"].(gocql.UUID),

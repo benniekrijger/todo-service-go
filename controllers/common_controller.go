@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"github.com/nats-io/go-nats"
 	"todo-service-go/utils"
 	"github.com/Sirupsen/logrus"
+	"github.com/nats-io/go-nats-streaming"
 )
 
 type CommonController struct {
-	natsSession *nats.Conn
+	natsSession stan.Conn
 }
 
 func (c *CommonController) decodeAndValidate(r *http.Request, v utils.InputValidation) error {

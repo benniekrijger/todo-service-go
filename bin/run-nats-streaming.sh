@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-echo "Removing old nats instances..."
+echo "Removing old nats streaming instances..."
 
-docker ps -aq --filter name=nats | xargs docker rm -f
+docker ps -aq --filter name=nats-streaming | xargs docker rm -f
 
-echo "Running new nats instance..."
+echo "Running new nats streaming instance..."
 
 : ${HOST:=$(ipconfig getifaddr en0)}
 : ${HOST:=$(ipconfig getifaddr en1)}
@@ -15,6 +15,6 @@ echo "Running new nats instance..."
 # could also expose zookeeper, add argument: -p 2181:2181 \
 docker run \
   --detach \
-  --name nats \
+  --name nats-streaming \
   -p 4222:4222 \
-  nats
+  nats-streaming

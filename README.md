@@ -14,7 +14,7 @@ To build the docker image of the service, run the following command:
 ### Start Dependencies
 
 Start NATS:      
-`bin/run-nats.sh`
+`bin/run-nats-streaming.sh`
 
 Start the scylla database:  
 `bin/run-scylla.sh`

@@ -1,16 +1,19 @@
 package main
 
 import (
-	"github.com/gorilla/mux"
 	"todo-service-go/controllers"
 	"todo-service-go/repositories"
 	"todo-service-go/handlers"
 	"net/http"
-	"github.com/nats-io/go-nats"
 	"todo-service-go/cassandra"
 	"os"
 	"github.com/Sirupsen/logrus"
+	"todo-service-go/api"
+	"github.com/nats-io/go-nats-streaming"
 )
+
+const natsClientName = "service_todo"
+const natsClusterName = "test-cluster"
 
 func init() {
 	logrus.SetOutput(os.Stdout)
@@ -34,13 +37,13 @@ func main() {
 	// Start NATS client
 	natsUrl := os.Getenv("NATS_URL")
 	if natsUrl == "" {
-		natsUrl = nats.DefaultURL
+		natsUrl = stan.DefaultNatsURL
 	}
-	natsSession, err := nats.Connect(natsUrl)
+	natsSession, err := stan.Connect(natsClusterName, natsClientName, stan.NatsURL(natsUrl))
 	if err != nil {
 		panic(err)
 	}
-	logrus.Info("Initialized NATS")
+	logrus.Info("Initialized NATS streaming")
 	defer natsSession.Close()
 
 	// Start repository
@@ -61,21 +64,9 @@ func main() {
 	todoController := controllers.NewTodoController(todoRepository, natsSession)
 	logrus.Info("Initialized Controllers")
 
-	// Start routers
-	router := mux.NewRouter()
-	apiRouter:= router.PathPrefix("/api/v1").Subrouter().StrictSlash(true)
-	apiRouter.HandleFunc("/", healthCheck)
-	apiRouter.HandleFunc("/todos", todoController.Index).Methods(http.MethodGet)
-	apiRouter.HandleFunc("/todos", todoController.AddTodo).Methods(http.MethodPost)
-	apiRouter.HandleFunc("/todos/{todo_id}", todoController.GetTodo).Methods(http.MethodGet)
-	apiRouter.HandleFunc("/todos/{todo_id}", todoController.RemoveTodo).Methods(http.MethodDelete)
-	logrus.Info("Initialized API")
+	// Start api
+	a := api.NewApi(todoController)
 
-	logrus.Fatal(http.ListenAndServe(":8080", router))
-}
+	logrus.Fatal(http.ListenAndServe(":8080", a.Router))
 
-func healthCheck(w http.ResponseWriter, req *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"ok": true}`))
 }

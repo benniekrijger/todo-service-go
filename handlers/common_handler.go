@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"github.com/nats-io/go-nats"
 	"todo-service-go/repositories"
+	"github.com/nats-io/go-nats-streaming"
 )
 
 type CommonHandler struct {
 	todoRepository *repositories.TodoRepository
-	natsSession    *nats.Conn
+	natsSession    stan.Conn
 }

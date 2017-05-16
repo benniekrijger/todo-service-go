@@ -8,8 +8,8 @@ import (
 	"todo-service-go/commands"
 	"github.com/gorilla/mux"
 	"github.com/gocql/gocql"
-	"github.com/nats-io/go-nats"
 	"github.com/Sirupsen/logrus"
+	"github.com/nats-io/go-nats-streaming"
 )
 
 type TodoController struct {
@@ -17,7 +17,7 @@ type TodoController struct {
 	todoRepository *repositories.TodoRepository
 }
 
-func NewTodoController(todoRepository *repositories.TodoRepository, natsSession *nats.Conn) *TodoController {
+func NewTodoController(todoRepository *repositories.TodoRepository, natsSession stan.Conn) *TodoController {
 	return &TodoController{
 		CommonController{natsSession},
 		todoRepository,
