@@ -12,8 +12,10 @@ import (
 	"github.com/nats-io/go-nats-streaming"
 )
 
-const natsClientName = "service_todo"
-const natsClusterName = "test-cluster"
+const (
+	natsClientName = "service_todo"
+	natsClusterName = "test-cluster"
+)
 
 func init() {
 	logrus.SetOutput(os.Stdout)
@@ -23,10 +25,11 @@ func init() {
 
 func main() {
 	// Start Cassandra/Scylla client
-	cassandraUrl := os.Getenv("CASSANDRA_URL")
-	if cassandraUrl == "" {
-		cassandraUrl = cassandra.DefaultURL
-	}
+	var (
+		cassandraUrl = envString("CASSANDRA_URL", cassandra.DefaultURL)
+		natsUrl = envString("NATS_URL", stan.DefaultNatsURL)
+	)
+
 	dbSession, err := cassandra.Connect(cassandraUrl, "todos")
 	if err != nil {
 		panic(err)
@@ -35,10 +38,6 @@ func main() {
 	defer dbSession.Close()
 
 	// Start NATS client
-	natsUrl := os.Getenv("NATS_URL")
-	if natsUrl == "" {
-		natsUrl = stan.DefaultNatsURL
-	}
 	natsSession, err := stan.Connect(natsClusterName, natsClientName, stan.NatsURL(natsUrl))
 	if err != nil {
 		panic(err)
@@ -68,5 +67,12 @@ func main() {
 	a := api.NewApi(todoController)
 
 	logrus.Fatal(http.ListenAndServe(":8080", a.Router))
+}
 
+func envString(env, fallback string) string {
+	e := os.Getenv(env)
+	if e == "" {
+		return fallback
+	}
+	return e
 }
