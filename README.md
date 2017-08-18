@@ -26,7 +26,7 @@ CREATE KEYSPACE todos WITH replication = {'class': 'SimpleStrategy', 'replicatio
 `docker-compose up todo-service`
 
 The API should then be available at:  
-`127.0.0.1:8011/api/v1/todos`
+`127.0.0.1:8080/api/v1/todos`
 
 ## API
 The service exposes the following API resources:
